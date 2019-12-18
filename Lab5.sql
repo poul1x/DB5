@@ -108,45 +108,21 @@ CODE
 END;
 
 CREATE OR REPLACE PROCEDURE GetHierarchyLevels() 
-RESULT CURSOR(node_name VARCHAR(16), level INT)
+RESULT CURSOR(node_id INT, node_name VARCHAR(16), level INT)
 DECLARE
   VAR c_levels typeof(result);
 CODE
 OPEN c_levels FOR
-"SELECT child.node_name, COUNT(parent.node_id) AS level
+"SELECT child.node_id, child.node_name, COUNT(parent.node_id) AS level
 FROM nested child JOIN nested parent 
   ON child.left_num BETWEEN parent.left_num AND parent.right_num
-  GROUP BY child.node_name
+  GROUP BY child.node_name, child.node_id
   ORDER BY level";
   
 RETURN c_levels;
 END;
 
-CREATE OR REPLACE PROCEDURE BuildHierarchyLevels() 
-CODE
-EXECUTE "CREATE OR REPLACE VIEW HierarchyLevels AS
-SELECT child.node_id, child.node_name, COUNT(parent.node_id) AS level
-FROM nested child JOIN nested parent 
-  ON child.left_num BETWEEN parent.left_num AND parent.right_num
-  GROUP BY child.node_name, child.node_id";
-END;
-
-CREATE OR REPLACE PROCEDURE GetHierarchyLevelsDiff(
-) RESULT CURSOR(higher_node_id INT, higher_node_name VARCHAR(16), lower_node_id INT, lower_node_name VARCHAR(16), level_diff INT)
-DECLARE
-VAR c typeof(result);
-CODE
-call BuildHierarchyLevels();
-open c for
-"SELECT HL1.node_id as higher_node_id, HL1.node_name as higher_node_name, 
-       HL2.node_id as lower_node_id, HL2.node_name as lower_node_name,
-       HL2.level - HL1.level as level_diff
-FROM HierarchyLevels HL1 JOIN HierarchyLevels HL2
-  ON HL2.level-HL1.level > 0";
-return c;
-END;
-
-CREATE OR REPLACE PROCEDURE GetParentChildrenPairs(
+CREATE OR REPLACE PROCEDURE GetParentChildPairs(
   IN node_name VARCHAR(16) DEFAULT "";
 ) RESULT CURSOR(
   parent_node_id INT, 
@@ -157,24 +133,43 @@ CREATE OR REPLACE PROCEDURE GetParentChildrenPairs(
 DECLARE
 VAR c typeof(result);
 CODE
-IF length(node_name) = 0 THEN
-    open c for
-"SELECT parent.node_id as parent_node_id, parent.node_name as parent_node_name, 
-       child.node_id as child_node_id, child.node_name as child_node_name
-from nested parent join nested child 
-  on parent.left_num < child.left_num and child.left_num < parent.right_num";
-ELSE
-    open c for
-"SELECT parent.node_id as parent_node_id, parent.node_name as parent_node_name, 
-       child.node_id as child_node_id, child.node_name as child_node_name
-from nested parent join nested child 
-  on parent.left_num < child.left_num and child.left_num < parent.right_num
-WHERE parent.node_name=?", node_name;
-  ENDIF;
-
+OPEN c FOR
+"SELECT parent.node_id AS parent_node_id, parent.node_name AS parent_node_name, 
+        child.node_id AS child_node_id, child.node_name AS child_node_name
+FROM nested parent JOIN nested child 
+  ON parent.left_num < child.left_num AND child.left_num < parent.right_num";
 return c;
 END;
 
+CREATE OR REPLACE PROCEDURE GetHierarchyLevelsDiff(
+) RESULT CURSOR(higher_node_id INT, higher_node_name VARCHAR(16), lower_node_id INT, lower_node_name VARCHAR(16), level_diff INT)
+DECLARE
+VAR c typeof(result);
+CODE  
+OPEN c FOR
+"SELECT HL1.node_id AS higher_node_id, HL1.node_name AS higher_node_name, 
+        HL2.node_id AS lower_node_id, HL2.node_name AS lower_node_name, 
+        HL2.level - HL1.level AS level_diff 
+FROM GetHierarchyLevels() AS HL1 
+  JOIN GetHierarchyLevels() AS HL2 
+    ON HL2.level - HL1.level > 0";
+return c;
+END;
+
+CREATE OR REPLACE PROCEDURE GetParentChildLevelDiff(
+) RESULT CURSOR(parent_node_id INT, parent_node_name VARCHAR(16), child_node_id INT, child_node_name VARCHAR(16), level_diff INT)
+DECLARE
+VAR c typeof(result);
+CODE  
+OPEN c FOR
+"SELECT pcp.parent_node_id, pcp.parent_node_name, 
+        pcp.child_node_id, pcp.child_node_name, level_diff
+FROM GetHierarchyLevelsDiff() hld
+  INNER JOIN GetParentChildPairs() pcp
+    ON hld.higher_node_id=pcp.parent_node_id 
+       AND hld.lower_node_id=pcp.child_node_id";
+return c;
+END;
 
 
 call AddLeaf('A');
@@ -186,21 +181,7 @@ call AddLeaf('F', 'A');
 call AddLeaf('M', 'C');
 call AddLeaf('N', 'C');
 
-call BuildHierarchyLevels();
-call BuildHierarchyLevelsDiffForAllNodes(2);
 
-CREATE OR REPLACE VIEW ParentChildrenPairs AS
-SELECT parent.node_id as parent_node_id, parent.node_name as parent_node_name, 
-       child.node_id as child_node_id, child.node_name as child_node_name
-from nested parent join nested child 
-  on parent.left_num < child.left_num and child.left_num < parent.right_num
-WHERE parent.node_name='A';
-
---select pcp.parent_node_name, pcp.child_node_name from HierarchyLevelsDiff hld INNER JOIN ParentChildrenPairs pcp
---ON hld.higher_node_id = pcp.parent_node_id AND hld.lower_node_id = pcp.child_node_id;
-  
--- SELECT * from HierarchyLevelsDiff;
-
-select * from GetHierarchyLevelsDiff();
-select * from GetParentChildrenPairs('B');
-  
+SELECT pcld.parent_node_name, pcld.child_node_name
+FROM GetParentChildLevelDiff() pcld
+WHERE pcld.child_node_name='D' AND pcld.level_diff=1;
