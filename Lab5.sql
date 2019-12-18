@@ -7,6 +7,111 @@ CREATE OR REPLACE TABLE nested(
     right_num INT NOT NULL check (right_num > 0)
 );
 
+
+--|--------------------------------------------------------------------------------
+--| 1. Вывести список всех терминальных элементов
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetNodesWithoutChildren(
+) RESULT CURSOR(node_name VARCHAR(16)) 
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT node_name FROM nested 
+    WHERE right_num-left_num=1";
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 2. Найти корень дерева
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetRoot(
+) RESULT VARCHAR(16) 
+DECLARE
+  VAR c typeof(result);
+CODE
+  EXECUTE "SELECT node_name FROM nested WHERE left_num=1" INTO c;
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 3. Определить длину максимального пути (глубину) дерева
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetMaxDepth(
+) RESULT INT
+DECLARE
+  VAR m typeof(result);
+CODE
+  EXECUTE "select MAX(level) FROM GetHierarchyLevels()" INTO m;
+  RETURN m;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 4. Вывести все пути по одному (двум, трем, ...) уровням в дереве
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllDestinations(
+  IN level INT
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "select node_id, node_name FROM GetHierarchyLevels()
+    WHERE level=?", level;
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 5. Суммирование данных узлов по поддереву от заданного корня
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE Summarize(
+  IN node_start VARCHAR(16);
+) RESULT INT
+DECLARE
+  VAR s typeof(result);
+  VAR node_id INT;
+  VAR cnt_ch INT;
+CODE
+  node_id := NameToId(node_start);
+  cnt_ch := CountOfChildren(node_id);
+  s := 0;
+  
+  IF cnt_ch > 0 THEN
+  EXECUTE "SELECT CAST SUM(child_node_id) AS INT FROM GetParentChildPairs()
+    WHERE parent_node_name=?", node_start INTO s;
+  ENDIF;
+  
+  RETURN s + node_id;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 6. Вычислить уровень иерархии данного узла
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetNodeHierarchyLevel(
+  IN node_name VARCHAR(16);
+) RESULT INT
+DECLARE
+  VAR h typeof(result);
+CODE
+  EXECUTE "select level FROM GetHierarchyLevels()
+    WHERE node_name=?", node_name INTO h;
+  RETURN h;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 7. Вычислить уровни всех узлов
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetHierarchyLevelsSorted(
+  IN node_name VARCHAR(16);
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16), level INT)
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "select * FROM GetHierarchyLevels() ORDER BY level";
+  RETURN c;
+END;
+
 CREATE OR REPLACE PROCEDURE NameToId(
   IN node_name VARCHAR(16);
 ) result INT 
@@ -47,6 +152,9 @@ CODE
   RETURN 1;
 END;
 
+--|--------------------------------------------------------------------------------
+--| 17. Вставка узла
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE AddLeaf(
   IN new_node_name varchar(16);
   IN parent_node_name varchar(16) DEFAULT "";
@@ -86,6 +194,9 @@ CODE
 END;
 
 
+--|--------------------------------------------------------------------------------
+--| 18. Удаление узла
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE RemoveNode(
   IN node_name varchar(16);
 ) RESULT INT
@@ -181,7 +292,4 @@ call AddLeaf('F', 'A');
 call AddLeaf('M', 'C');
 call AddLeaf('N', 'C');
 
-
-SELECT pcld.parent_node_name, pcld.child_node_name
-FROM GetParentChildLevelDiff() pcld
-WHERE pcld.child_node_name='D' AND pcld.level_diff=1;
+call GetHierarchyLevelsSorted();
