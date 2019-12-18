@@ -93,7 +93,7 @@ CREATE OR REPLACE PROCEDURE GetNodeHierarchyLevel(
 DECLARE
   VAR h typeof(result);
 CODE
-  EXECUTE "select level FROM GetHierarchyLevels()
+  EXECUTE "SELECT level FROM GetHierarchyLevels()
     WHERE node_name=?", node_name INTO h;
   RETURN h;
 END;
@@ -108,7 +108,118 @@ DECLARE
   VAR c typeof(result);
 CODE
   OPEN c FOR
-  "select * FROM GetHierarchyLevels() ORDER BY level";
+  "SELECT * FROM GetHierarchyLevels() ORDER BY level";
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 10. Вывести всех потомков данного элемента
+--|--------------------------------------------------------------------------------
+
+--| 10.a. Всех потомков 
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllChildren(
+  IN node_name VARCHAR(16);
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT child_node_id, child_node_name FROM GetParentChildPairs()
+    WHERE parent_node_name=?", node_name;
+  RETURN c;
+END;
+
+--| 10.b. Всех потомков заданного уровня
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllChildrenAtLevel(
+  IN node_name VARCHAR(16);
+  IN level INT;
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT child_node_id, child_node_name FROM GetParentChildLevelDiff()
+    WHERE parent_node_name=? AND level_diff=?", node_name, level;
+  RETURN c;
+END;
+
+--| 10.c. Потомков до заданного уровня
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllChildrenUpToLevel(
+  IN node_name VARCHAR(16);
+  IN level INT;
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT child_node_id, child_node_name FROM GetParentChildLevelDiff()
+    WHERE parent_node_name=? AND level_diff<=?", node_name, level;
+  RETURN c;
+END;
+
+--| 10.d. Всех терминальных потомков
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllChildrenLeaves(
+  IN node_name VARCHAR(16);
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT node_id, node_name FROM nested WHERE node_id IN 
+    (SELECT child_node_id FROM GetParentChildPairs()
+    WHERE parent_node_name=?) AND right_num-left_num=1", node_name;
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 12. Вывести всех предков данного элемента
+--|--------------------------------------------------------------------------------
+
+--| 12.a. Всех предков 
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllParents(
+  IN node_name VARCHAR(16);
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT parent_node_id, parent_node_name FROM GetParentChildPairs()
+    WHERE child_node_name=?", node_name;
+  RETURN c;
+END;
+
+--| 12.b. Всех предков заданного уровня
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllParentsAtLevel(
+  IN node_name VARCHAR(16);
+  IN level INT;
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT parent_node_id, parent_node_name FROM GetParentChildLevelDiff()
+    WHERE child_node_name=? AND level_diff=?", node_name, level;
+  RETURN c;
+END;
+
+--| 12.c. Предков до заданного уровня
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllParentsUpToLevel(
+  IN node_name VARCHAR(16);
+  IN level INT;
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT parent_node_id, parent_node_name FROM GetParentChildLevelDiff()
+    WHERE child_node_name=? AND level_diff<=?", node_name, level;
   RETURN c;
 END;
 
@@ -282,14 +393,3 @@ FROM GetHierarchyLevelsDiff() hld
 return c;
 END;
 
-
-call AddLeaf('A');
-call AddLeaf('B', 'A');
-call AddLeaf('C', 'A');
-call AddLeaf('D', 'B');
-call AddLeaf('E', 'B');
-call AddLeaf('F', 'A');
-call AddLeaf('M', 'C');
-call AddLeaf('N', 'C');
-
-call GetHierarchyLevelsSorted();

@@ -1,93 +1,8 @@
 --|--------------------------------------------------------------------------------
---| AddLeaf tests
+--| 10-11. Вывести всех потомков данного элемента и их количество
 --|--------------------------------------------------------------------------------
 
---| 1 
---|--------------------------------------------------------------------------------
--- DELETE FROM nested;
--- call AddLeaf('A');
--- call AddLeaf('B', 'A');
--- call AddLeaf('C', 'B');
--- call AddLeaf('D', 'C');
--- call AddLeaf('E', 'D');
--- call AddLeaf('F', 'E');
-
---| 2 
---|--------------------------------------------------------------------------------
--- DELETE FROM nested;
--- call AddLeaf('A');
--- call AddLeaf('B', 'A');
--- call AddLeaf('C', 'B');
--- call AddLeaf('D', 'C');
--- call AddLeaf('E', 'D');
--- call AddLeaf('F', 'E');
--- call AddLeaf('G', 'F');
--- call AddLeaf('H', 'E');
--- call AddLeaf('J', 'D');
-
---| 3 
---|--------------------------------------------------------------------------------
--- DELETE FROM nested;
--- call AddLeaf('A');
--- call AddLeaf('B', 'A');
--- call AddLeaf('C', 'B');
--- call AddLeaf('D', 'C');
--- call AddLeaf('E', 'D');
--- call AddLeaf('F', 'E');
--- call AddLeaf('G', 'F');
--- call AddLeaf('H', 'E');
--- call AddLeaf('J', 'D');
--- call AddLeaf('K', 'J');
--- call AddLeaf('L', 'J');
--- call AddLeaf('M', 'J');
-
---|--------------------------------------------------------------------------------
---| RemoveLeaf tests
---|--------------------------------------------------------------------------------
-
---| 1 
---|--------------------------------------------------------------------------------
--- DELETE FROM nested;
--- call AddLeaf('A');
--- call AddLeaf('B', 'A');
--- call AddLeaf('C', 'A');
--- call RemoveLeaf('A'); -- fails
--- call RemoveLeaf('C');
-
---| 2
---|--------------------------------------------------------------------------------
--- DELETE FROM nested;
--- call AddLeaf('A');
--- call AddLeaf('B', 'A');
--- call AddLeaf('C', 'A');
--- call RemoveLeaf('C');
--- call RemoveLeaf('B');
--- call RemoveLeaf('A');
-
---| 3 
---|--------------------------------------------------------------------------------
--- DELETE FROM nested;
--- call AddLeaf('A');
--- call AddLeaf('B', 'A');
--- call AddLeaf('C', 'B');
--- call AddLeaf('D', 'C');
--- call AddLeaf('E', 'D');
--- call AddLeaf('F', 'E');
--- call AddLeaf('G', 'F');
--- call AddLeaf('H', 'E');
--- call AddLeaf('J', 'D');
--- call AddLeaf('K', 'J');
--- call AddLeaf('L', 'J');
--- call AddLeaf('M', 'J');
--- call RemoveLeaf('G');
--- call RemoveLeaf('L');
--- call RemoveLeaf('M');
-
---|--------------------------------------------------------------------------------
---| RemoveLeaf tests
---|--------------------------------------------------------------------------------
-
---| 1 
+--| 10-11.a. Всех потомков 
 --|--------------------------------------------------------------------------------
 -- DELETE FROM nested;
 -- call AddLeaf('A');
@@ -95,11 +10,17 @@
 -- call AddLeaf('C', 'A');
 -- call AddLeaf('D', 'B');
 -- call AddLeaf('E', 'B');
--- call AddLeaf('F', 'C');
--- call AddLeaf('K', 'C');
--- call RemoveNode('B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- 
+-- call GetAllChildren('A');
+-- call GetAllChildren('C');
+-- call GetAllChildren('F');
+-- select count(*) from GetAllChildren('C');
 
---| 2 
+--| 10-11.b. Всех потомков заданного уровня
 --|--------------------------------------------------------------------------------
 -- DELETE FROM nested;
 -- call AddLeaf('A');
@@ -107,20 +28,110 @@
 -- call AddLeaf('C', 'A');
 -- call AddLeaf('D', 'B');
 -- call AddLeaf('E', 'B');
--- call AddLeaf('F', 'C');
--- call AddLeaf('K', 'C');
--- call RemoveNode('C');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- 
+-- call GetAllChildrenAtLevel('A', 1);
+-- call GetAllChildrenAtLevel('A', 2);
+-- call GetAllChildrenAtLevel('A', 3);
+-- call GetAllChildrenAtLevel('C', 1);
+-- call GetAllChildrenAtLevel('F', 1);
+-- select count(*) from GetAllChildrenAtLevel('A', 1);
 
---| 3 
+
+--| 10-11.c. Потомков до заданного уровня
 --|--------------------------------------------------------------------------------
-DELETE FROM nested;
-call AddLeaf('A');
-call AddLeaf('B', 'A');
-call AddLeaf('C', 'A');
-call AddLeaf('D', 'B');
-call AddLeaf('E', 'B');
-call AddLeaf('M', 'D');
-call AddLeaf('N', 'D');
-call AddLeaf('F', 'C');
-call AddLeaf('K', 'C');
-call RemoveNode('B');
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- 
+-- call GetAllChildrenUpToLevel('A', 1);
+-- call GetAllChildrenUpToLevel('A', 2);
+-- select count(*) from GetAllChildrenUpToLevel('A', 2);
+
+--| 10-11.d. Всех терминальных потомков
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- 
+-- call GetAllChildrenLeaves('A');
+-- call GetAllChildrenLeaves('C');
+-- call GetAllChildrenLeaves('F');
+-- select count(*) from GetAllChildrenLeaves('A');
+
+--|--------------------------------------------------------------------------------
+--| 12-13. Вывести всех предков данного элемента и их количество
+--|--------------------------------------------------------------------------------
+
+--| 12-13.a. Всех предков 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- 
+-- call GetAllParents('A');
+-- call GetAllParents('C');
+-- call GetAllParents('L');
+-- select count(*) from GetAllParents('B');
+
+--| 12-13.b. Всех предков заданного уровня
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- 
+-- call GetAllParentsAtLevel('L', 1);
+-- call GetAllParentsAtLevel('N', 2);
+-- call GetAllParentsAtLevel('F', 1);
+-- call GetAllParentsAtLevel('A', 1);
+-- call GetAllParentsAtLevel('B', 1);
+-- select count(*) from GetAllParentsAtLevel('E', 2);
+
+
+--| 12-13.c. Предков до заданного уровня
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- 
+-- call GetAllParentsUpToLevel('L', 2);
+-- call GetAllParentsUpToLevel('D', 1);
+-- select count(*) from GetAllParentsUpToLevel('M', 2);
