@@ -3,10 +3,13 @@
 CREATE OR REPLACE TABLE nested(
     node_id INT NOT NULL PRIMARY KEY AUTOINC,
     node_name VARCHAR(16) NOT NULL UNIQUE,
-    left_num INT NOT NULL check(left_num > 0),
-    right_num INT NOT NULL check (right_num > 0)
+    left_num INT NOT NULL,
+    right_num INT NOT NULL
 );
 
+CREATE OR REPLACE TABLE nodes_of_nested(
+    node_name VARCHAR(16) NOT NULL UNIQUE
+);
 
 --|--------------------------------------------------------------------------------
 --| 1. Вывести список всех терминальных элементов
@@ -220,6 +223,57 @@ CODE
   OPEN c FOR
   "SELECT parent_node_id, parent_node_name FROM GetParentChildLevelDiff()
     WHERE child_node_name=? AND level_diff<=?", node_name, level;
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 14.a-d. Вывести всех общих предков двух и более заданных элементов
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllCommonParents() 
+RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+  VAR cnt INT;
+CODE
+  EXECUTE "SELECT COUNT(*) from nodes_of_nested" into cnt;
+  OPEN c FOR
+  "SELECT pcp.parent_node_id, pcp.parent_node_name FROM GetParentChildPairs() pcp
+  WHERE pcp.child_node_name IN (select node_name FROM nodes_of_nested)
+  GROUP BY pcp.parent_node_id, pcp.parent_node_name
+  HAVING COUNT(pcp.parent_node_id)=?", cnt;
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 15. Вывести всех общих предков двух и более заданных элементов
+--|--------------------------------------------------------------------------------
+--| 15.a Начиная снизу
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllCommonParentsFromBottom() 
+RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT n.node_id, n.node_name 
+  FROM GetAllCommonParents() acp INNER JOIN nested n
+  ON acp.node_id = n.node_id
+  ORDER BY n.right_num";
+  RETURN c;
+END;
+
+--| 15.b Начиная сверху
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetAllCommonParentsFromTop() 
+RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT n.node_id, n.node_name 
+  FROM GetAllCommonParents() acp INNER JOIN nested n
+  ON acp.node_id = n.node_id
+  ORDER BY n.left_num";
   RETURN c;
 END;
 
