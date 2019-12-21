@@ -11,6 +11,11 @@ CREATE OR REPLACE TABLE nodes_of_nested(
     node_name VARCHAR(16) NOT NULL UNIQUE
 );
 
+CREATE OR REPLACE TABLE path_in_nested(
+    id INT NOT NULL PRIMARY KEY AUTOINC,
+    node_name VARCHAR(16) NOT NULL UNIQUE
+);
+
 --|--------------------------------------------------------------------------------
 --| 1. Вывести список всех терминальных элементов
 --|--------------------------------------------------------------------------------
@@ -247,6 +252,7 @@ END;
 --|--------------------------------------------------------------------------------
 --| 15. Вывести всех общих предков двух и более заданных элементов
 --|--------------------------------------------------------------------------------
+
 --| 15.a Начиная снизу
 --|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE GetAllCommonParentsFromBottom() 
@@ -447,3 +453,88 @@ FROM GetHierarchyLevelsDiff() hld
 return c;
 END;
 
+CREATE OR REPLACE PROCEDURE GetPathFromBottomUnsorted(
+  IN node_name_bottom VARCHAR(16);
+  IN node_name_top VARCHAR(16);
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16), left_num INT, right_num INT) 
+DECLARE
+VAR c typeof(result);
+VAR left_num_bottom, left_num_top INT;
+VAR right_num_bottom, right_num_top INT;
+CODE  
+EXECUTE "select left_num, right_num from nested where node_name=?", 
+  node_name_bottom into left_num_bottom, right_num_bottom;
+EXECUTE "select left_num, right_num from nested where node_name=?", 
+  node_name_top into left_num_top, right_num_top;
+OPEN c FOR
+  "select * from nested 
+  WHERE (left_num<? AND right_num>?) AND (left_num>=? AND right_num<=?)
+  union select * from nested 
+  WHERE left_num=? AND right_num=?", 
+  left_num_bottom, right_num_bottom, left_num_top, 
+  right_num_top, left_num_bottom, right_num_bottom;
+RETURN c;
+END;
+
+CREATE OR REPLACE PROCEDURE UpdatePathFromBottom(
+  IN node_name_bottom VARCHAR(16);
+  IN node_name_top VARCHAR(16);
+) 
+DECLARE
+VAR c CURSOR(node_name VARCHAR(16));
+CODE  
+OPEN c FOR DIRECT
+"select node_name from GetPathFromBottomUnsorted(
+  '" + node_name_bottom + "','" + node_name_top + "') ORDER BY right_num";
+WHILE NOT outofcursor(c) LOOP
+  EXECUTE "insert into path_in_nested(node_name) values(?)", c.node_name;
+  fetch c;
+ENDLOOP;
+END;
+
+CREATE OR REPLACE PROCEDURE UpdatePathFromTop(
+  IN node_name_bottom VARCHAR(16);
+  IN node_name_top VARCHAR(16);
+)
+DECLARE
+VAR c CURSOR(node_name VARCHAR(16));
+CODE  
+OPEN c FOR DIRECT
+"select node_name from GetPathFromBottomUnsorted(
+  '" + node_name_bottom + "','" + node_name_top + "') ORDER BY left_num";
+WHILE NOT outofcursor(c) LOOP
+  EXECUTE "insert into path_in_nested(node_name) values(?)", c.node_name;
+  fetch c;
+ENDLOOP;
+END;
+
+
+
+DELETE FROM nested;
+call AddLeaf('A');
+call AddLeaf('B', 'A');
+call AddLeaf('C', 'A');
+call AddLeaf('D', 'B');
+call AddLeaf('E', 'B');
+call AddLeaf('F', 'A');
+call AddLeaf('M', 'C');
+call AddLeaf('N', 'C');
+call AddLeaf('L', 'C');
+call AddLeaf('P', 'D');
+call AddLeaf('G', 'D');
+call AddLeaf('H', 'N');
+call AddLeaf('I', 'N');
+
+delete from path_in_nested;
+call UpdatePathFromBottom('P', 'A');
+call UpdatePathFromTop('H', 'A');
+select * from path_in_nested order by id;
+-- call GetPathFromTop('H', 'A');
+-- select * from
+-- (
+--   ((select * from nested WHERE (left_num < 4 AND right_num > 5) AND (left_num >= 1 AND right_num <=26)
+--   union  select * from nested WHERE left_num = 4 AND right_num = 5) AS a1 order by a1.left_num)
+--   union
+--   ((select * from nested WHERE (left_num < 18 AND right_num > 19) AND (left_num >= 1 AND right_num <=26)
+--   union select * from nested WHERE left_num = 18 AND right_num = 19) AS a2 order by a2.left_num)
+-- );
