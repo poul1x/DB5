@@ -18,6 +18,13 @@ CREATE OR REPLACE TABLE path_in_nested(
     node_name VARCHAR(16) NOT NULL UNIQUE
 );
 
+-- п.19
+CREATE OR REPLACE TABLE nested_subtree(
+    node_name VARCHAR(16) NOT NULL UNIQUE,
+    left_num INT NOT NULL,
+    right_num INT NOT NULL
+);
+
 --|--------------------------------------------------------------------------------
 --| 1. Вывести список всех терминальных элементов
 --|--------------------------------------------------------------------------------
@@ -347,7 +354,7 @@ DECLARE
   VAR c typeof(result);
   VAR cnt INT;
 CODE
-  EXECUTE "SELECT COUNT(*) from nodes_of_nested" into cnt;
+  EXECUTE "SELECT COUNT(*) FROM nodes_of_nested" into cnt;
   OPEN c FOR
   "SELECT pcp.parent_node_id, pcp.parent_node_name FROM GetParentChildPairs() pcp
   WHERE pcp.child_node_name IN (select node_name FROM nodes_of_nested)
@@ -422,7 +429,7 @@ CREATE OR REPLACE PROCEDURE AddRoot(
 DECLARE
   VAR already_has_root INT;
 CODE 
-  EXECUTE DIRECT "SELECT count(node_id) from nested where left_num=1" INTO already_has_root;
+  EXECUTE DIRECT "SELECT count(node_id) FROM nested where left_num=1" INTO already_has_root;
   IF already_has_root=1 THEN
     RETURN -1;
   ENDIF;
@@ -558,4 +565,83 @@ FROM GetHierarchyLevelsDiff() hld
     ON hld.higher_node_id=pcp.parent_node_id 
        AND hld.lower_node_id=pcp.child_node_id";
 return c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 19. Вставка поддерева
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE InsertTree(
+  IN parent_node_name VARCHAR(16);
+)
+DECLARE
+VAR in_left, in_right INT;
+VAR in_size, sub_size INT;
+CODE  
+EXECUTE "SELECT left_num, right_num, right_num-left_num+1 
+  FROM nested WHERE node_name=?", parent_node_name INTO in_left, in_right, in_size;
+
+EXECUTE "SELECT right_num-left_num+1 
+  FROM nested_subtree WHERE left_num=1" INTO sub_size;
+
+EXECUTE "UPDATE nested SET right_num=right_num+?, left_num=left_num+?
+  WHERE left_num>?", sub_size, sub_size, in_right;
+
+EXECUTE "UPDATE nested SET right_num=right_num+? 
+  WHERE left_num<=? AND right_num>=?", sub_size, in_left, in_right;
+
+EXECUTE "UPDATE nested SET left_num=left_num+?, right_num=right_num+?
+  WHERE left_num>? AND right_num<?", sub_size, sub_size, in_left, in_right;
+
+EXECUTE "UPDATE nested_subtree 
+  SET left_num=left_num+?, right_num=right_num+?", in_left, in_left;
+
+EXECUTE "INSERT INTO nested(node_name, left_num, right_num)
+ SELECT * FROM nested_subtree";
+END;
+
+--|--------------------------------------------------------------------------------
+--| 20. Удаление поддерева (удаление узла и всех его потомков)
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE RemoveTree(
+  IN node_name VARCHAR(16);
+)
+DECLARE
+VAR drop_left, drop_right, drop_size INT;
+CODE  
+EXECUTE "SELECT left_num, right_num, right_num-left_num+1 
+  FROM nested WHERE node_name=?", node_name into drop_left, drop_right, drop_size;
+
+EXECUTE "DELETE FROM nested 
+  WHERE left_num>=? and left_num<=?", drop_left, drop_right;
+
+EXECUTE "UPDATE nested SET left_num=left_num-?, right_num=right_num-?
+  WHERE left_num>?", drop_size, drop_size, drop_left;
+
+EXECUTE "UPDATE nested SET right_num=right_num-? 
+  WHERE right_num>? AND left_num<?", drop_size, drop_right, drop_left; 
+END;
+
+--|--------------------------------------------------------------------------------
+--| 21. Перемещение поддерева 
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE MoveTree(
+  IN node_name_rm VARCHAR(16);
+  IN node_name_ins VARCHAR(16);
+)
+DECLARE
+VAR left_num, right_num, delta INT;
+CODE  
+EXECUTE "SELECT left_num, right_num FROM nested 
+  WHERE node_name=?", node_name_rm into left_num, right_num;
+
+EXECUTE "INSERT INTO nested_subtree 
+  SELECT node_name, left_num, right_num FROM nested WHERE left_num>=? AND right_num<=?", left_num, right_num;
+
+delta := left_num - 1;
+EXECUTE "UPDATE nested_subtree
+  SET left_num=left_num-?, right_num=right_num-?", delta, delta;
+
+call RemoveTree(node_name_rm);
+call InsertTree(node_name_ins);
+
 END;
