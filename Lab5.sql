@@ -50,7 +50,7 @@ CREATE OR REPLACE PROCEDURE GetMaxDepth(
 DECLARE
   VAR m typeof(result);
 CODE
-  EXECUTE "select MAX(level) FROM GetHierarchyLevels()" INTO m;
+  EXECUTE "SELECT MAX(level) FROM GetHierarchyLevels()" INTO m;
   RETURN m;
 END;
 
@@ -64,7 +64,7 @@ DECLARE
   VAR c typeof(result);
 CODE
   OPEN c FOR
-  "select node_id, node_name FROM GetHierarchyLevels()
+  "SELECT node_id, node_name FROM GetHierarchyLevels()
     WHERE level=?", level;
   RETURN c;
 END;
@@ -74,22 +74,16 @@ END;
 --|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE Summarize(
   IN node_start VARCHAR(16);
-) RESULT INT
+) RESULT CURSOR(node_name VARCHAR(16))
 DECLARE
-  VAR s typeof(result);
+  VAR c typeof(result);
   VAR node_id INT;
   VAR cnt_ch INT;
 CODE
-  node_id := NameToId(node_start);
-  cnt_ch := CountOfChildren(node_id);
-  s := 0;
-  
-  IF cnt_ch > 0 THEN
-  EXECUTE "SELECT CAST SUM(child_node_id) AS INT FROM GetParentChildPairs()
-    WHERE parent_node_name=?", node_start INTO s;
-  ENDIF;
-  
-  RETURN s + node_id;
+  OPEN c FOR DIRECT
+  "SELECT child_node_name FROM GetParentChildPairs()
+    WHERE parent_node_name='"+node_start+"' UNION SELECT '"+node_start+"'";
+  RETURN c;
 END;
 
 --|--------------------------------------------------------------------------------
@@ -118,6 +112,117 @@ CODE
   OPEN c FOR
   "SELECT * FROM GetHierarchyLevels() ORDER BY level";
   RETURN c;
+END;
+
+CREATE OR REPLACE PROCEDURE GetPathFromBottomUnsorted(
+  IN node_name_bottom VARCHAR(16);
+  IN node_name_top VARCHAR(16);
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16), left_num INT, right_num INT) 
+DECLARE
+VAR c typeof(result);
+VAR left_num_bottom, left_num_top INT;
+VAR right_num_bottom, right_num_top INT;
+CODE  
+EXECUTE "SELECT left_num, right_num FROM nested WHERE node_name=?", 
+  node_name_bottom INTO left_num_bottom, right_num_bottom;
+EXECUTE "SELECT left_num, right_num FROM nested WHERE node_name=?", 
+  node_name_top INTO left_num_top, right_num_top;
+OPEN c FOR
+  "SELECT * FROM nested 
+  WHERE (left_num<? AND right_num>?) AND (left_num>=? AND right_num<=?)
+  UNION SELECT * FROM nested 
+  WHERE left_num=? AND right_num=?", 
+  left_num_bottom, right_num_bottom, left_num_top, 
+  right_num_top, left_num_bottom, right_num_bottom;
+RETURN c;
+END;
+
+CREATE OR REPLACE PROCEDURE UpdatePathFromBottom(
+  IN node_name_bottom VARCHAR(16);
+  IN node_name_top VARCHAR(16);
+) 
+DECLARE
+VAR c CURSOR(node_name VARCHAR(16));
+CODE  
+OPEN c FOR DIRECT
+"SELECT node_name FROM GetPathFromBottomUnsorted(
+  '" + node_name_bottom + "','" + node_name_top + "') ORDER BY right_num";
+WHILE NOT outofcursor(c) LOOP
+  EXECUTE "INSERT INTO path_in_nested(node_name) VALUES(?)", c.node_name;
+  fetch c;
+ENDLOOP;
+END;
+
+CREATE OR REPLACE PROCEDURE UpdatePathFromTop(
+  IN node_name_bottom VARCHAR(16);
+  IN node_name_top VARCHAR(16);
+)
+DECLARE
+VAR c CURSOR(node_name VARCHAR(16));
+CODE  
+OPEN c FOR DIRECT
+"SELECT node_name FROM GetPathFromBottomUnsorted(
+  '" + node_name_bottom + "','" + node_name_top + "') ORDER BY left_num";
+WHILE NOT outofcursor(c) LOOP
+  EXECUTE "INSERT INTO path_in_nested(node_name) VALUES(?)", c.node_name;
+  fetch c;
+ENDLOOP;
+END;
+
+CREATE OR REPLACE PROCEDURE FindMinCommonParent(
+  IN node_name1 VARCHAR(16);
+  IN node_name2 VARCHAR(16);
+) RESULT VARCHAR(16)
+DECLARE
+  VAR c CURSOR(node_id INT, node_name VARCHAR(16));
+  VAR cp_max_left INT;
+  VAR min_common_parent VARCHAR(16);
+CODE
+  EXECUTE "DELETE FROM nodes_of_nested";
+  EXECUTE "INSERT INTO nodes_of_nested(node_name) VALUES(?)", node_name1;
+  EXECUTE "INSERT INTO nodes_of_nested(node_name) VALUES(?)", node_name2;
+  
+  EXECUTE "SELECT MAX(n.left_num) 
+  FROM GetAllCommonParents() acp INNER JOIN nested n 
+  ON acp.node_id = n.node_id" INTO cp_max_left; 
+
+  EXECUTE "SELECT node_name FROM nested WHERE left_num=?",
+    cp_max_left INTO min_common_parent;
+
+  return min_common_parent;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 9. Вывести путь между двумя узлами
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE CreatePathInNested(
+  IN node_name_FROM VARCHAR(16);
+  IN node_name_to VARCHAR(16);
+)
+DECLARE
+VAR left_num_FROM, right_num_FROM INT;
+VAR left_num_to , right_num_to INT;
+VAR min_common_parent VARCHAR(16);
+CODE
+EXECUTE "SELECT left_num, right_num FROM nested WHERE node_name=?", 
+  node_name_FROM INTO left_num_FROM, right_num_FROM;
+EXECUTE "SELECT left_num, right_num FROM nested WHERE node_name=?", 
+  node_name_to INTO left_num_to, right_num_to;
+IF left_num_FROM=left_num_to AND right_num_FROM=right_num_to THEN
+  /* the same node */
+  EXECUTE "INSERT INTO path_in_nested(node_name) VALUES(?)", node_name_to;
+ELSEIF left_num_FROM > left_num_to AND right_num_FROM < right_num_to THEN
+  /* bottom -> top */
+  call UpdatePathFromBottom(node_name_FROM, node_name_to);
+ELSEIF left_num_FROM < left_num_to AND right_num_FROM > right_num_to THEN
+  /* top -> bottom */
+  call UpdatePathFromTop(node_name_to, node_name_FROM);
+ELSE
+  /* bottom -> top -> bottom with sharing one node */
+  min_common_parent := FindMinCommonParent(node_name_FROM, node_name_to);
+  call UpdatePathFromBottom(node_name_FROM, min_common_parent);
+  call UpdatePathFromTop(node_name_to, min_common_parent);
+ENDIF;
 END;
 
 --|--------------------------------------------------------------------------------
@@ -452,134 +557,3 @@ FROM GetHierarchyLevelsDiff() hld
        AND hld.lower_node_id=pcp.child_node_id";
 return c;
 END;
-
-CREATE OR REPLACE PROCEDURE GetPathFromBottomUnsorted(
-  IN node_name_bottom VARCHAR(16);
-  IN node_name_top VARCHAR(16);
-) RESULT CURSOR(node_id INT, node_name VARCHAR(16), left_num INT, right_num INT) 
-DECLARE
-VAR c typeof(result);
-VAR left_num_bottom, left_num_top INT;
-VAR right_num_bottom, right_num_top INT;
-CODE  
-EXECUTE "select left_num, right_num from nested where node_name=?", 
-  node_name_bottom into left_num_bottom, right_num_bottom;
-EXECUTE "select left_num, right_num from nested where node_name=?", 
-  node_name_top into left_num_top, right_num_top;
-OPEN c FOR
-  "select * from nested 
-  WHERE (left_num<? AND right_num>?) AND (left_num>=? AND right_num<=?)
-  union select * from nested 
-  WHERE left_num=? AND right_num=?", 
-  left_num_bottom, right_num_bottom, left_num_top, 
-  right_num_top, left_num_bottom, right_num_bottom;
-RETURN c;
-END;
-
-CREATE OR REPLACE PROCEDURE UpdatePathFromBottom(
-  IN node_name_bottom VARCHAR(16);
-  IN node_name_top VARCHAR(16);
-) 
-DECLARE
-VAR c CURSOR(node_name VARCHAR(16));
-CODE  
-OPEN c FOR DIRECT
-"select node_name from GetPathFromBottomUnsorted(
-  '" + node_name_bottom + "','" + node_name_top + "') ORDER BY right_num";
-WHILE NOT outofcursor(c) LOOP
-  EXECUTE "insert into path_in_nested(node_name) values(?)", c.node_name;
-  fetch c;
-ENDLOOP;
-END;
-
-CREATE OR REPLACE PROCEDURE UpdatePathFromTop(
-  IN node_name_bottom VARCHAR(16);
-  IN node_name_top VARCHAR(16);
-)
-DECLARE
-VAR c CURSOR(node_name VARCHAR(16));
-CODE  
-OPEN c FOR DIRECT
-"select node_name from GetPathFromBottomUnsorted(
-  '" + node_name_bottom + "','" + node_name_top + "') ORDER BY left_num";
-WHILE NOT outofcursor(c) LOOP
-  EXECUTE "insert into path_in_nested(node_name) values(?)", c.node_name;
-  fetch c;
-ENDLOOP;
-END;
-
-CREATE OR REPLACE PROCEDURE FindMinCommonParent(
-  IN node_name1 VARCHAR(16);
-  IN node_name2 VARCHAR(16);
-) RESULT VARCHAR(16)
-DECLARE
-  VAR c CURSOR(node_id INT, node_name VARCHAR(16));
-  VAR cp_max_left INT;
-  VAR min_common_parent VARCHAR(16);
-CODE
-  EXECUTE "delete from nodes_of_nested";
-  EXECUTE "insert into nodes_of_nested(node_name) values(?)", node_name1;
-  EXECUTE "insert into nodes_of_nested(node_name) values(?)", node_name2;
-  
-  EXECUTE "select MAX(n.left_num) 
-  FROM GetAllCommonParents() acp inner join nested n 
-  on acp.node_id = n.node_id" into cp_max_left; 
-
-  EXECUTE "select node_name from nested WHERE left_num=?",
-    cp_max_left into min_common_parent;
-
-  return min_common_parent;
-END;
-
-CREATE OR REPLACE PROCEDURE CreatePathInNested(
-  IN node_name_from VARCHAR(16);
-  IN node_name_to VARCHAR(16);
-)
-DECLARE
-VAR left_num_from, right_num_from INT;
-VAR left_num_to , right_num_to INT;
-VAR min_common_parent VARCHAR(16);
-CODE
-EXECUTE "select left_num, right_num from nested where node_name=?", 
-  node_name_from into left_num_from, right_num_from;
-EXECUTE "select left_num, right_num from nested where node_name=?", 
-  node_name_to into left_num_to, right_num_to;
-IF left_num_from=left_num_to AND right_num_from=right_num_to THEN
-  EXECUTE "insert into path_in_nested(node_name) values(?)", node_name_to;
-ELSEIF left_num_from > left_num_to AND right_num_from < right_num_to THEN
-  /* bottom -> top */
-  call UpdatePathFromBottom(node_name_from, node_name_to);
-ELSEIF left_num_from < left_num_to AND right_num_from > right_num_to THEN
-  /* top -> bottom */
-  call UpdatePathFromTop(node_name_to, node_name_from);
-ELSE
-  /* bottom -> top -> bottom with sharing one node */
-  min_common_parent := FindMinCommonParent(node_name_from, node_name_to);
-  call UpdatePathFromBottom(node_name_from, min_common_parent);
-  call UpdatePathFromTop(node_name_to, min_common_parent);
-ENDIF;
-END;
-
-
-DELETE FROM nested;
-call AddLeaf('A');
-call AddLeaf('B', 'A');
-call AddLeaf('C', 'A');
-call AddLeaf('D', 'B');
-call AddLeaf('E', 'B');
-call AddLeaf('F', 'A');
-call AddLeaf('M', 'C');
-call AddLeaf('N', 'C');
-call AddLeaf('L', 'C');
-call AddLeaf('P', 'D');
-call AddLeaf('G', 'D');
-call AddLeaf('H', 'N');
-call AddLeaf('I', 'N');
-
-delete from path_in_nested;
--- call UpdatePathFromBottom('B', 'A');
--- call UpdatePathFromTop('G', 'B');
-
--- call FindMinCommonParent('B', 'A');
-call CreatePathInNested('F', 'P');
-select * from path_in_nested order by id;

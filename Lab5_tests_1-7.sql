@@ -64,7 +64,7 @@
 -- call AddLeaf('F', 'A');
 -- call AddLeaf('M', 'C');
 -- call AddLeaf('N', 'C');
--- 
+--  
 -- call Summarize('A');
 -- call Summarize('B');
 -- call Summarize('C');

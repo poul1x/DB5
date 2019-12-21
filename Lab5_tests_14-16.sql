@@ -75,7 +75,7 @@ call AddLeaf('I', 'N');
 --|--------------------------------------------------------------------------------
 --| 16. ¬ывести количество всех общих предков двух и более заданных элементов
 --|--------------------------------------------------------------------------------
--- DELETE FROM nodes_of_nested;
--- INSERT INTO nodes_of_nested VALUES('P');
--- INSERT INTO nodes_of_nested VALUES('G');
--- SELECT count(*) FROM GetAllCommonParents();
+DELETE FROM nodes_of_nested;
+INSERT INTO nodes_of_nested VALUES('P');
+INSERT INTO nodes_of_nested VALUES('G');
+SELECT count(*) FROM GetAllCommonParents();
