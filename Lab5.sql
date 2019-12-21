@@ -508,6 +508,57 @@ WHILE NOT outofcursor(c) LOOP
 ENDLOOP;
 END;
 
+CREATE OR REPLACE PROCEDURE FindMinCommonParent(
+  IN node_name1 VARCHAR(16);
+  IN node_name2 VARCHAR(16);
+) RESULT VARCHAR(16)
+DECLARE
+  VAR c CURSOR(node_id INT, node_name VARCHAR(16));
+  VAR cp_max_left INT;
+  VAR min_common_parent VARCHAR(16);
+CODE
+  EXECUTE "delete from nodes_of_nested";
+  EXECUTE "insert into nodes_of_nested(node_name) values(?)", node_name1;
+  EXECUTE "insert into nodes_of_nested(node_name) values(?)", node_name2;
+  
+  EXECUTE "select MAX(n.left_num) 
+  FROM GetAllCommonParents() acp inner join nested n 
+  on acp.node_id = n.node_id" into cp_max_left; 
+
+  EXECUTE "select node_name from nested WHERE left_num=?",
+    cp_max_left into min_common_parent;
+
+  return min_common_parent;
+END;
+
+CREATE OR REPLACE PROCEDURE CreatePathInNested(
+  IN node_name_from VARCHAR(16);
+  IN node_name_to VARCHAR(16);
+)
+DECLARE
+VAR left_num_from, right_num_from INT;
+VAR left_num_to , right_num_to INT;
+VAR min_common_parent VARCHAR(16);
+CODE
+EXECUTE "select left_num, right_num from nested where node_name=?", 
+  node_name_from into left_num_from, right_num_from;
+EXECUTE "select left_num, right_num from nested where node_name=?", 
+  node_name_to into left_num_to, right_num_to;
+IF left_num_from=left_num_to AND right_num_from=right_num_to THEN
+  EXECUTE "insert into path_in_nested(node_name) values(?)", node_name_to;
+ELSEIF left_num_from > left_num_to AND right_num_from < right_num_to THEN
+  /* bottom -> top */
+  call UpdatePathFromBottom(node_name_from, node_name_to);
+ELSEIF left_num_from < left_num_to AND right_num_from > right_num_to THEN
+  /* top -> bottom */
+  call UpdatePathFromTop(node_name_to, node_name_from);
+ELSE
+  /* bottom -> top -> bottom with sharing one node */
+  min_common_parent := FindMinCommonParent(node_name_from, node_name_to);
+  call UpdatePathFromBottom(node_name_from, min_common_parent);
+  call UpdatePathFromTop(node_name_to, min_common_parent);
+ENDIF;
+END;
 
 
 DELETE FROM nested;
@@ -526,15 +577,9 @@ call AddLeaf('H', 'N');
 call AddLeaf('I', 'N');
 
 delete from path_in_nested;
-call UpdatePathFromBottom('P', 'A');
-call UpdatePathFromTop('H', 'A');
+-- call UpdatePathFromBottom('B', 'A');
+-- call UpdatePathFromTop('G', 'B');
+
+-- call FindMinCommonParent('B', 'A');
+call CreatePathInNested('F', 'P');
 select * from path_in_nested order by id;
--- call GetPathFromTop('H', 'A');
--- select * from
--- (
---   ((select * from nested WHERE (left_num < 4 AND right_num > 5) AND (left_num >= 1 AND right_num <=26)
---   union  select * from nested WHERE left_num = 4 AND right_num = 5) AS a1 order by a1.left_num)
---   union
---   ((select * from nested WHERE (left_num < 18 AND right_num > 19) AND (left_num >= 1 AND right_num <=26)
---   union select * from nested WHERE left_num = 18 AND right_num = 19) AS a2 order by a2.left_num)
--- );
