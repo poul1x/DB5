@@ -7,10 +7,12 @@ CREATE OR REPLACE TABLE nested(
     right_num INT NOT NULL
 );
 
+-- ï.14-16
 CREATE OR REPLACE TABLE nodes_of_nested(
     node_name VARCHAR(16) NOT NULL UNIQUE
 );
 
+-- ï.8-9
 CREATE OR REPLACE TABLE path_in_nested(
     id INT NOT NULL PRIMARY KEY AUTOINC,
     node_name VARCHAR(16) NOT NULL UNIQUE
