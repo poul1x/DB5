@@ -1,5 +1,3 @@
--- TODO Сделать процедуру get-tree-size - колво узлов удвоенное
-
 CREATE OR REPLACE TABLE nested(
     node_id INT NOT NULL PRIMARY KEY AUTOINC,
     node_name VARCHAR(16) NOT NULL UNIQUE,
@@ -20,6 +18,13 @@ CREATE OR REPLACE TABLE path_in_nested(
 
 -- п.19
 CREATE OR REPLACE TABLE nested_subtree(
+    node_name VARCHAR(16) NOT NULL UNIQUE,
+    left_num INT NOT NULL,
+    right_num INT NOT NULL
+);
+
+-- п.17
+CREATE OR REPLACE TABLE children(
     node_name VARCHAR(16) NOT NULL UNIQUE,
     left_num INT NOT NULL,
     right_num INT NOT NULL
@@ -438,7 +443,7 @@ CODE
 END;
 
 --|--------------------------------------------------------------------------------
---| 17. Вставка узла
+--| 17. Вставка узла (лист)
 --|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE AddLeaf(
   IN new_node_name varchar(16);
@@ -464,6 +469,41 @@ CODE
 
 END;
 
+--|--------------------------------------------------------------------------------
+--| 17. Вставка узла
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE InsertNode(
+  IN new_node_name varchar(16);
+  IN parent_node_name varchar(16);
+)
+DECLARE
+  VAR parent_node_left, parent_node_right INT;
+  VAR new_node_left, new_node_right INT;
+CODE
+EXECUTE "SELECT left_num, right_num FROM nested 
+  WHERE node_name=?", parent_node_name INTO parent_node_left, parent_node_right;
+
+EXECUTE "SELECT MIN(left_num), MAX(right_num)+2 
+  FROM children" INTO new_node_left, new_node_right;
+
+EXECUTE "UPDATE nested
+  SET left_num=left_num+1, right_num=right_num+1
+  WHERE left_num>=? AND right_num<?", new_node_left, new_node_right;
+
+EXECUTE "UPDATE nested SET right_num=right_num+2
+  WHERE left_num<=? AND right_num>=?", parent_node_left, parent_node_right;
+
+EXECUTE "UPDATE nested
+  SET left_num=left_num+2, right_num=right_num+2
+  WHERE left_num+1>=?", new_node_right;
+
+EXECUTE "INSERT INTO nested(node_name, left_num, right_num)
+  VALUES(?,?,?)", new_node_name, new_node_left, new_node_right;  
+END;
+
+--|--------------------------------------------------------------------------------
+--| 18. Удаление узла (лист)
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE RemoveLeaf(
   IN node_name varchar(16);
 ) RESULT INT

@@ -1,5 +1,5 @@
 --|--------------------------------------------------------------------------------
---| AddLeaf tests
+--| 17. Вставка узла (лист)
 --|--------------------------------------------------------------------------------
 
 --| 1 
@@ -42,7 +42,46 @@
 -- call AddLeaf('M', 'J');
 
 --|--------------------------------------------------------------------------------
---| RemoveLeaf tests
+--| 17. Вставка узла
+--|--------------------------------------------------------------------------------
+
+--| 1 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- DELETE FROM children;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- INSERT INTO children VALUES('B', 2, 7);
+-- INSERT INTO children VALUES('C', 8, 15);
+-- call InsertNode('Z', 'A');
+-- SELECT * FROM nested;
+
+--| 2 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- DELETE FROM children;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- INSERT INTO children VALUES('N', 11, 12);
+-- call InsertNode('Z', 'C');
+-- SELECT * FROM nested;
+
+--|--------------------------------------------------------------------------------
+--| 18. Удаление листа (лист)
 --|--------------------------------------------------------------------------------
 
 --| 1 
@@ -84,7 +123,7 @@
 -- call RemoveLeaf('M');
 
 --|--------------------------------------------------------------------------------
---| RemoveLeaf tests
+--| 18. Удаление узла 
 --|--------------------------------------------------------------------------------
 
 --| 1 
@@ -113,14 +152,14 @@
 
 --| 3 
 --|--------------------------------------------------------------------------------
-DELETE FROM nested;
-call AddLeaf('A');
-call AddLeaf('B', 'A');
-call AddLeaf('C', 'A');
-call AddLeaf('D', 'B');
-call AddLeaf('E', 'B');
-call AddLeaf('M', 'D');
-call AddLeaf('N', 'D');
-call AddLeaf('F', 'C');
-call AddLeaf('K', 'C');
-call RemoveNode('B');
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('M', 'D');
+-- call AddLeaf('N', 'D');
+-- call AddLeaf('F', 'C');
+-- call AddLeaf('K', 'C');
+-- call RemoveNode('B');
