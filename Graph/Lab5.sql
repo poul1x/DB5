@@ -126,6 +126,19 @@ CODE
 END;
 
 --|--------------------------------------------------------------------------------
+--| 9. Определить наличие циклов в графе
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE FindLoops()
+DECLARE
+  VAR n INT;
+CODE
+  LOOP
+    EXECUTE "call RemoveNodesWithOnlyInArcs()";
+    EXECUTE "SELECT count(*) FROM GetNodesWithOnlyInArcs()" into n;
+  UNTIL n = 0;  
+END;
+
+--|--------------------------------------------------------------------------------
 --| 10. Выделить вершины только с входными дугами
 --|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE GetNodesWithOnlyInArcs(
@@ -177,9 +190,6 @@ CODE
     WHERE node_id IN SELECT node_id FROM GetNodesWithOnlyOutArcs()";
 END;
 
---|--------------------------------------------------------------------------------
---| 9. Определить наличие циклов в графе
---|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE FindLoops()
 DECLARE
   VAR n INT;
@@ -189,3 +199,86 @@ CODE
     EXECUTE "SELECT count(*) FROM GetNodesWithOnlyInArcs()" into n;
   UNTIL n = 0;  
 END;
+
+CREATE OR REPLACE TABLE VectorP(
+  node_id INT NOT NULL PRIMARY KEY,
+  prev_node_id INT NOT NULL,
+  is_visited INT NOT NULL,
+  cost INT
+);
+
+CREATE OR REPLACE PROCEDURE f1(
+  IN node_name_start VARCHAR(16);
+)
+DECLARE
+  VAR node_id_start, cur_node_id INT;
+  VAR cur_node_cost, out_node_cost INT;
+  VAR cnt_not_visited INT;
+  VAR c CURSOR(node_id INT);
+CODE
+  // get start id
+  EXECUTE "select node_id from Vertice 
+    where node_name=?", node_name_start into node_id_start; 
+
+  // VectorP initialization
+  EXECUTE "INSERT INTO VectorP(node_id, prev_node_id, is_visited) 
+    SELECT node_id, ?, 0 FROM Vertice", node_id_start;
+  EXECUTE "UPDATE VectorP SET cost=0 
+    WHERE node_id=?", node_id_start;
+  
+  LOOP
+    // select min cost of not visited
+    EXECUTE "select min(cost) from VectorP
+      WHERE is_visited=0" into cur_node_cost;
+
+    // select node which is not visited and has min cost
+    EXECUTE "select node_id from VectorP 
+      where is_visited=0 and cost=? LIMIT 1", 
+      cur_node_cost into cur_node_id;
+
+    // get all near destination nodes of current node
+    OPEN c FOR
+    "select id_in from AdjMatrix
+      WHERE id_out=?", cur_node_id;
+
+    // update cost for each destination node
+    WHILE NOT outofcursor(c) LOOP
+      EXECUTE "select cost from VectorP 
+        WHERE node_id=?", c.node_id into out_node_cost;
+    
+      IF out_node_cost=NULL OR cur_node_cost + 1 < out_node_cost THEN
+        EXECUTE "UPDATE VectorP SET cost=? 
+          WHERE node_id=?", cur_node_cost + 1, c.node_id;
+        EXECUTE "UPDATE VectorP SET prev_node_id=? 
+          WHERE node_id=?", cur_node_id, c.node_id;
+      ENDIF;
+
+      fetch c;
+    ENDLOOP;
+
+    // mark current node as visited
+    EXECUTE "UPDATE VectorP SET is_visited=1 
+      WHERE node_id=?", cur_node_id;
+
+    // check not visited nodes still exist
+    EXECUTE "select count(node_id) from VectorP 
+      where is_visited=0" into cnt_not_visited;
+
+  UNTIL cnt_not_visited = 0;
+END;
+
+
+DELETE FROM Vertice;
+DELETE FROM AdjMatrix;
+DELETE FROM VectorP;
+call AddVertice('A');
+call AddVertice('B');
+call AddVertice('C');
+call AddVertice('D');
+call AddArc('A', 'B');
+call AddArc('B', 'C');
+call AddArc('C', 'D');
+call AddArc('B', 'D');
+
+call f1('A');
+select * from VectorP;
