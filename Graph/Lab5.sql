@@ -18,6 +18,20 @@ CREATE TABLE AdjMatrix(
       ON DELETE CASCADE
 );
 
+-- п. 7
+CREATE OR REPLACE TABLE VectorP(
+  node_id INT NOT NULL PRIMARY KEY,
+  prev_node_id INT NOT NULL,
+  is_visited INT NOT NULL,
+  cost INT
+);
+
+-- п. 7
+CREATE OR REPLACE TABLE RouteP(
+  id INT NOT NULL PRIMARY KEY AUTOINC,
+  node_name VARCHAR(16) NOT NULL UNIQUE
+);
+
 --|--------------------------------------------------------------------------------
 --| 1. Добавление вершины
 --|--------------------------------------------------------------------------------
@@ -200,14 +214,7 @@ CODE
   UNTIL n = 0;  
 END;
 
-CREATE OR REPLACE TABLE VectorP(
-  node_id INT NOT NULL PRIMARY KEY,
-  prev_node_id INT NOT NULL,
-  is_visited INT NOT NULL,
-  cost INT
-);
-
-CREATE OR REPLACE PROCEDURE f1(
+CREATE OR REPLACE PROCEDURE BuildPathMap(
   IN node_name_start VARCHAR(16);
 )
 DECLARE
@@ -216,32 +223,37 @@ DECLARE
   VAR cnt_not_visited INT;
   VAR c CURSOR(node_id INT);
 CODE
-  // get start id
+  /* get start id */
   EXECUTE "select node_id from Vertice 
     where node_name=?", node_name_start into node_id_start; 
 
-  // VectorP initialization
+  /* VectorP initialization */
   EXECUTE "INSERT INTO VectorP(node_id, prev_node_id, is_visited) 
     SELECT node_id, ?, 0 FROM Vertice", node_id_start;
   EXECUTE "UPDATE VectorP SET cost=0 
     WHERE node_id=?", node_id_start;
   
   LOOP
-    // select min cost of not visited
+    /* select min cost of not visited */
     EXECUTE "select min(cost) from VectorP
       WHERE is_visited=0" into cur_node_cost;
-
-    // select node which is not visited and has min cost
+    
+    /* unreachable nodes are left */
+    IF  cur_node_cost=NULL THEN
+      BREAK;
+    ENDIF;
+    
+    /* select node which is not visited and has min cost */
     EXECUTE "select node_id from VectorP 
       where is_visited=0 and cost=? LIMIT 1", 
       cur_node_cost into cur_node_id;
 
-    // get all near destination nodes of current node
+    /* get all near destination nodes of current node */
     OPEN c FOR
     "select id_in from AdjMatrix
       WHERE id_out=?", cur_node_id;
 
-    // update cost for each destination node
+    /* update cost for each destination node */
     WHILE NOT outofcursor(c) LOOP
       EXECUTE "select cost from VectorP 
         WHERE node_id=?", c.node_id into out_node_cost;
@@ -256,17 +268,52 @@ CODE
       fetch c;
     ENDLOOP;
 
-    // mark current node as visited
+    /* mark current node as visited */
     EXECUTE "UPDATE VectorP SET is_visited=1 
       WHERE node_id=?", cur_node_id;
 
-    // check not visited nodes still exist
+    /* check not visited nodes still exist */
     EXECUTE "select count(node_id) from VectorP 
       where is_visited=0" into cnt_not_visited;
 
   UNTIL cnt_not_visited = 0;
 END;
 
+CREATE OR REPLACE PROCEDURE BuildRouteTo(
+  IN node_name_to VARCHAR(16);
+) RESULT INT
+DECLARE
+  VAR node_id_cur_cp, node_id_to INT;
+  VAR is_visited, node_id_cur INT;
+  VAR node_name_cur VARCHAR(16);
+CODE
+  EXECUTE "select node_id from Vertice 
+    where node_name=?", node_name_to into node_id_to; 
+  
+  EXECUTE "select is_visited from VectorP 
+    where node_id=?", node_id_to into is_visited; 
+
+  IF is_visited=0 THEN
+    return -1;
+  ENDIF
+
+  node_id_cur := node_id_to;
+  node_name_cur := node_name_to;
+
+  LOOP
+    EXECUTE "insert into RouteP(node_name)
+      values(?)", node_name_cur;
+
+    node_id_cur_cp := node_id_cur;
+    EXECUTE "select prev_node_id from VectorP
+      WHERE node_id=? AND is_visited=1", node_id_cur into node_id_cur;
+    
+    EXECUTE "select node_name from Vertice
+      WHERE node_id=?", node_id_cur into node_name_cur;
+
+  UNTIL node_id_cur = node_id_cur_cp;  
+  return 1;
+END;
 
 DELETE FROM Vertice;
 DELETE FROM AdjMatrix;
@@ -277,8 +324,8 @@ call AddVertice('C');
 call AddVertice('D');
 call AddArc('A', 'B');
 call AddArc('B', 'C');
-call AddArc('C', 'D');
-call AddArc('B', 'D');
+call AddArc('D', 'B');
 
-call f1('A');
-select * from VectorP;
+call BuildPathMap('A');
+call BuildRouteTo('D');
+select * from RouteP order by id desc;
