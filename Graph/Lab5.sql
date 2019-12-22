@@ -18,6 +18,9 @@ CREATE TABLE AdjMatrix(
       ON DELETE CASCADE
 );
 
+--|--------------------------------------------------------------------------------
+--| 1. Добавление вершины
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE AddVertice(
   IN node_name VARCHAR(16);
 )
@@ -25,6 +28,9 @@ CODE
   EXECUTE "INSERT INTO Vertice(node_name) VALUES(?)", node_name;
 END;
 
+--|--------------------------------------------------------------------------------
+--| 2. Удаление вершины
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE RemoveVertice(
   IN node_name VARCHAR(16);
 )
@@ -33,6 +39,9 @@ CODE
     WHERE node_name=?", node_name;
 END;
 
+--|--------------------------------------------------------------------------------
+--| 3. Добавление дуги
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE AddEdge(
   IN node_name_from VARCHAR(16);
   IN node_name_to VARCHAR(16);
@@ -48,6 +57,9 @@ CODE
     VALUES(?, ?)", node_id_to, node_id_from;
 END;
 
+--|--------------------------------------------------------------------------------
+--| 4. Удаление дуги
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE RemoveEdge(
   IN node_name_from VARCHAR(16);
   IN node_name_to VARCHAR(16);
@@ -74,3 +86,41 @@ END;
   ON v1.node_id=am.id_out AND v2.node_id=am.id_in";
   RETURN c;
  END;
+
+--|--------------------------------------------------------------------------------
+--| 5. Определить смежность вершин
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE CheckAdjacency(
+  IN node_name_from VARCHAR(16);
+  IN node_name_to VARCHAR(16);
+) RESULT INT
+DECLARE
+  VAR cnt, node_id_from, node_id_to INT;
+CODE
+  EXECUTE "SELECT node_id FROM Vertice
+    WHERE node_name=?", node_name_from into node_id_from;
+  EXECUTE "SELECT node_id FROM Vertice 
+    WHERE node_name=?", node_name_to into node_id_to;
+  EXECUTE "SELECT count(*) FROM AdjMatrix
+    WHERE id_in=? AND id_out=?", node_id_to, node_id_from into cnt;
+  RETURN cnt;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 6. Определить инцидентность узла к ребру
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE CheckIncidence(
+  IN node_name VARCHAR(16);
+  IN link_value INT;
+) RESULT INT
+DECLARE
+  VAR node_id INT;
+  VAR cnt INT;
+CODE
+  EXECUTE "SELECT node_id FROM Vertice
+    WHERE node_name=?", node_name into node_id;
+  EXECUTE "SELECT count(*) FROM AdjMatrix
+    WHERE (id_link=? AND id_in=?) OR (id_link=? AND id_out=?)",
+    link_value, node_id, link_value, node_id into cnt;
+  RETURN cnt;
+END;

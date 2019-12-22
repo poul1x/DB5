@@ -51,3 +51,44 @@
 -- 
 -- call RemoveVertice('A');
 -- call ShowMatrix();
+
+--|--------------------------------------------------------------------------------
+--| 5. Определить смежность вершин
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddEdge('A', 'B');
+-- call AddEdge('B', 'A');
+-- call AddEdge('B', 'C');
+-- call AddEdge('C', 'D');
+-- call CheckAdjacency('A', 'B');
+-- call CheckAdjacency('B', 'A');
+-- call CheckAdjacency('B', 'C');
+-- call CheckAdjacency('C', 'D');
+-- call CheckAdjacency('A', 'D');
+-- call CheckAdjacency('C', 'B');
+
+--|--------------------------------------------------------------------------------
+--| 6. Определить инцидентность узла к ребру
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddEdge('A', 'B');
+-- call AddEdge('B', 'A');
+-- call AddEdge('B', 'C');
+-- call AddEdge('C', 'D');
+-- select * from AdjMatrix;
+-- call CheckIncidence('A', 1);
+-- call CheckIncidence('B', 2);
+-- call CheckIncidence('C', 3);
+-- call CheckIncidence('D', 4);
+-- call CheckIncidence('A', 4);
+-- call CheckIncidence('B', 4);
