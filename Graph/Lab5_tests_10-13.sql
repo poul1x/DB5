@@ -1,0 +1,127 @@
+--|--------------------------------------------------------------------------------
+--| 10. Выделить вершины только с входными дугами
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('B', 'A');
+-- call AddArc('D', 'A');
+-- call AddArc('A', 'C');
+-- call GetNodesWithOnlyInArcs();
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'B');
+-- call AddArc('A', 'D');
+-- call AddArc('A', 'C');
+-- call AddArc('C', 'A');
+-- call GetNodesWithOnlyInArcs();
+
+--|--------------------------------------------------------------------------------
+--| 11. Удалить вершины только с входными дугами
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('B', 'A');
+-- call AddArc('D', 'A');
+-- call AddArc('A', 'C');
+-- call RemoveNodesWithOnlyInArcs();
+-- call ShowMatrix();
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'B');
+-- call AddArc('A', 'D');
+-- call AddArc('A', 'C');
+-- call AddArc('C', 'A');
+-- call RemoveNodesWithOnlyInArcs();
+-- call ShowMatrix();
+
+--|--------------------------------------------------------------------------------
+--| 12. Выделить вершины только с выходными дугами
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('B', 'A');
+-- call AddArc('D', 'A');
+-- call AddArc('A', 'C');
+-- call GetNodesWithOnlyOutArcs();
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'B');
+-- call AddArc('A', 'D');
+-- call AddArc('A', 'C');
+-- call AddArc('C', 'A');
+-- call GetNodesWithOnlyOutArcs();
+
+--|--------------------------------------------------------------------------------
+--| 13. Удалить вершины только с выходными дугами
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('B', 'A');
+-- call AddArc('D', 'A');
+-- call AddArc('A', 'C');
+-- call RemoveNodesWithOnlyOutArcs();
+-- call ShowMatrix();
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'B');
+-- call AddArc('A', 'D');
+-- call AddArc('A', 'C');
+-- call AddArc('C', 'A');
+-- call RemoveNodesWithOnlyOutArcs();
+-- call ShowMatrix();

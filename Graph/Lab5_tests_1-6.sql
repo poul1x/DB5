@@ -26,10 +26,10 @@
 -- call AddVertice('B');
 -- call AddVertice('C');
 -- call AddVertice('D');
--- call AddEdge('A', 'B');
--- call AddEdge('B', 'A');
--- call AddEdge('B', 'C');
--- call AddEdge('C', 'D');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'A');
+-- call AddArc('B', 'C');
+-- call AddArc('C', 'D');
 -- call ShowMatrix();
 
 --|--------------------------------------------------------------------------------
@@ -41,12 +41,12 @@
 -- call AddVertice('B');
 -- call AddVertice('C');
 -- call AddVertice('D');
--- call AddEdge('A', 'B');
--- call AddEdge('B', 'A');
--- call AddEdge('B', 'C');
--- call AddEdge('C', 'D');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'A');
+-- call AddArc('B', 'C');
+-- call AddArc('C', 'D');
 -- 
--- call RemoveEdge('C', 'D');
+-- call RemoveArc('C', 'D');
 -- call ShowMatrix();
 -- 
 -- call RemoveVertice('A');
@@ -61,10 +61,10 @@
 -- call AddVertice('B');
 -- call AddVertice('C');
 -- call AddVertice('D');
--- call AddEdge('A', 'B');
--- call AddEdge('B', 'A');
--- call AddEdge('B', 'C');
--- call AddEdge('C', 'D');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'A');
+-- call AddArc('B', 'C');
+-- call AddArc('C', 'D');
 -- call CheckAdjacency('A', 'B');
 -- call CheckAdjacency('B', 'A');
 -- call CheckAdjacency('B', 'C');
@@ -81,10 +81,10 @@
 -- call AddVertice('B');
 -- call AddVertice('C');
 -- call AddVertice('D');
--- call AddEdge('A', 'B');
--- call AddEdge('B', 'A');
--- call AddEdge('B', 'C');
--- call AddEdge('C', 'D');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'A');
+-- call AddArc('B', 'C');
+-- call AddArc('C', 'D');
 -- select * from AdjMatrix;
 -- call CheckIncidence('A', 1);
 -- call CheckIncidence('B', 2);

@@ -42,7 +42,7 @@ END;
 --|--------------------------------------------------------------------------------
 --| 3. Добавление дуги
 --|--------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE AddEdge(
+CREATE OR REPLACE PROCEDURE AddArc(
   IN node_name_from VARCHAR(16);
   IN node_name_to VARCHAR(16);
 )
@@ -60,7 +60,7 @@ END;
 --|--------------------------------------------------------------------------------
 --| 4. Удаление дуги
 --|--------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE RemoveEdge(
+CREATE OR REPLACE PROCEDURE RemoveArc(
   IN node_name_from VARCHAR(16);
   IN node_name_to VARCHAR(16);
 )
@@ -123,4 +123,56 @@ CODE
     WHERE (id_link=? AND id_in=?) OR (id_link=? AND id_out=?)",
     link_value, node_id, link_value, node_id into cnt;
   RETURN cnt;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 10. Выделить вершины только с входными дугами
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetNodesWithOnlyInArcs(
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT node_id, node_name FROM Vertice 
+  WHERE node_id IN
+  SELECT id_in FROM AdjMatrix
+  WHERE id_in NOT IN 
+  SELECT id_out FROM AdjMatrix";
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 11. Удалить вершины только с входными дугами
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE RemoveNodesWithOnlyInArcs()
+CODE
+  EXECUTE "DELETE FROM Vertice 
+    WHERE node_id IN SELECT node_id FROM GetNodesWithOnlyInArcs()";
+END;
+
+--|--------------------------------------------------------------------------------
+--| 12. Выделить вершины только с выходными дугами
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE GetNodesWithOnlyOutArcs(
+) RESULT CURSOR(node_id INT, node_name VARCHAR(16))
+DECLARE
+  VAR c typeof(result);
+CODE
+  OPEN c FOR
+  "SELECT node_id, node_name FROM Vertice 
+  WHERE node_id IN
+  SELECT id_out FROM AdjMatrix
+  WHERE id_out NOT IN 
+  SELECT id_in FROM AdjMatrix";
+  RETURN c;
+END;
+
+--|--------------------------------------------------------------------------------
+--| 13. Удалить вершины только с выходными дугами
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE RemoveNodesWithOnlyOutArcs()
+CODE
+  EXECUTE "DELETE FROM Vertice 
+    WHERE node_id IN SELECT node_id FROM GetNodesWithOnlyOutArcs()";
 END;
