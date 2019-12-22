@@ -87,3 +87,18 @@
 -- 
 -- call FindLoops();
 -- call ShowMatrix();
+
+--| 6. 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'D');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'D');
+-- 
+-- call FindLoops();
+-- call ShowMatrix();
