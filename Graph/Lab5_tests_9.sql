@@ -1,0 +1,89 @@
+
+--|--------------------------------------------------------------------------------
+--| 9. Определить наличие циклов в графе
+--|--------------------------------------------------------------------------------
+
+--| 1. 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'C');
+-- call AddArc('C', 'D');
+-- call AddArc('D', 'A');
+-- 
+-- call FindLoops();
+-- call ShowMatrix();
+
+--| 2. 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'B');
+-- call AddArc('A', 'D');
+-- call AddArc('A', 'C');
+-- call AddArc('C', 'A');
+-- 
+-- call FindLoops();
+-- call ShowMatrix();
+
+--| 3. 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('B', 'A');
+-- call AddArc('D', 'A');
+-- call AddArc('A', 'C');
+-- 
+-- call FindLoops();
+-- call ShowMatrix();
+ 
+--| 4. 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('B', 'A');
+-- call AddArc('D', 'A');
+-- call AddArc('A', 'C');
+-- call AddArc('A', 'A');
+-- 
+-- call FindLoops();
+-- call ShowMatrix();
+
+--| 5. 
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddVertice('E');
+-- call AddVertice('F');
+-- call AddArc('B', 'A');
+-- call AddArc('B', 'D');
+-- call AddArc('C', 'B');
+-- call AddArc('D', 'C');
+-- call AddArc('D', 'E');
+-- call AddArc('D', 'A');
+-- call AddArc('E', 'F');
+-- call AddArc('F', 'A');
+-- 
+-- call FindLoops();
+-- call ShowMatrix();

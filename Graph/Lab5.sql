@@ -176,3 +176,16 @@ CODE
   EXECUTE "DELETE FROM Vertice 
     WHERE node_id IN SELECT node_id FROM GetNodesWithOnlyOutArcs()";
 END;
+
+--|--------------------------------------------------------------------------------
+--| 9. Определить наличие циклов в графе
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE FindLoops()
+DECLARE
+  VAR n INT;
+CODE
+  LOOP
+    EXECUTE "call RemoveNodesWithOnlyInArcs()";
+    EXECUTE "SELECT count(*) FROM GetNodesWithOnlyInArcs()" into n;
+  UNTIL n = 0;  
+END;
