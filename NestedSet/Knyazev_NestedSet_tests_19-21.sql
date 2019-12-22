@@ -1,0 +1,117 @@
+--|--------------------------------------------------------------------------------
+--| 19. Вставка поддерева
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- DELETE FROM nested_subtree;
+-- call AddLeaf('A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- 
+-- INSERT INTO nested_subtree VALUES('B', 1, 6);
+-- INSERT INTO nested_subtree VALUES('D', 2, 3);
+-- INSERT INTO nested_subtree VALUES('E', 4, 5);
+-- call InsertTree('A');
+-- SELECT * FROM nested;
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- DELETE FROM nested_subtree;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- call AddLeaf('P', 'D');
+-- call AddLeaf('G', 'D');
+-- 
+-- INSERT INTO nested_subtree VALUES('M', 1, 6);
+-- INSERT INTO nested_subtree VALUES('H', 2, 3);
+-- INSERT INTO nested_subtree VALUES('I', 4, 5);
+-- call InsertTree('C');
+-- SELECT * FROM nested;
+
+--|--------------------------------------------------------------------------------
+--| 20. Удаление поддерева (удаление узла и всех его потомков)
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- 
+-- call RemoveTree('C'); --| 1.
+-- call RemoveTree('B'); --| 2.
+-- SELECT * FROM nested;
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- call AddLeaf('P', 'D');
+-- call AddLeaf('G', 'D');
+-- call AddLeaf('H', 'N');
+-- call AddLeaf('I', 'N');
+
+-- call RemoveTree('N'); --| 1.
+-- call RemoveTree('C'); --| 2.
+-- call RemoveTree('A'); --| 3.
+-- call RemoveTree('G'); --| 4.
+-- SELECT * FROM nested;
+
+--|--------------------------------------------------------------------------------
+--| 21. Перемещение поддерева 
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- DELETE FROM nested_subtree;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- call MoveTree('F', 'B');
+-- SELECT * FROM nested;
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM nested;
+-- DELETE FROM nested_subtree;
+-- call AddLeaf('A');
+-- call AddLeaf('B', 'A');
+-- call AddLeaf('C', 'A');
+-- call AddLeaf('F', 'A');
+-- call AddLeaf('D', 'B');
+-- call AddLeaf('E', 'B');
+-- call AddLeaf('M', 'C');
+-- call AddLeaf('N', 'C');
+-- call AddLeaf('L', 'C');
+-- call MoveTree('C', 'A');
+-- SELECT * FROM nested;

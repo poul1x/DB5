@@ -1,0 +1,53 @@
+--|--------------------------------------------------------------------------------
+--| 1. Добавление вершины
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- SELECT * FROM Vertice;
+
+--|--------------------------------------------------------------------------------
+--| 2. Удаление вершины
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call RemoveVertice('A');
+-- SELECT * FROM Vertice;
+
+--|--------------------------------------------------------------------------------
+--| 3. Добавление дуги
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddEdge('A', 'B');
+-- call AddEdge('B', 'A');
+-- call AddEdge('B', 'C');
+-- call AddEdge('C', 'D');
+-- call ShowMatrix();
+
+--|--------------------------------------------------------------------------------
+--| 4. Удаление дуги
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddEdge('A', 'B');
+-- call AddEdge('B', 'A');
+-- call AddEdge('B', 'C');
+-- call AddEdge('C', 'D');
+-- 
+-- call RemoveEdge('C', 'D');
+-- call ShowMatrix();
+-- 
+-- call RemoveVertice('A');
+-- call ShowMatrix();
