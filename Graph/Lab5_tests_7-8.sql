@@ -1,0 +1,141 @@
+--|--------------------------------------------------------------------------------
+--| 7. Найти путь между двумя вершинами
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- DELETE FROM VectorP;
+-- DELETE FROM RouteP;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('F');
+-- call AddVertice('G');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'F');
+-- call AddArc('F', 'G');
+-- call AddArc('G', 'A');
+-- 
+-- call BuildPathMap('A');
+-- call BuildRouteTo('G');
+-- SELECT * FROM RouteP ORDER BY id DESC;
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- DELETE FROM VectorP;
+-- DELETE FROM RouteP;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('F');
+-- call AddVertice('G');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'F');
+-- call AddArc('G', 'F');
+-- call AddArc('G', 'A');
+-- 
+-- call BuildPathMap('A');
+-- call BuildRouteTo('G'); -- fails
+-- SELECT * FROM RouteP ORDER BY id DESC;
+
+--| 3.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- DELETE FROM VectorP;
+-- DELETE FROM RouteP;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('F');
+-- call AddVertice('G');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddVertice('E');
+-- call AddVertice('F');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'F');
+-- call AddArc('F', 'G');
+-- call AddArc('G', 'A');
+-- call AddArc('F', 'C');
+-- call AddArc('F', 'E');
+-- call AddArc('C', 'D');
+-- call AddArc('D', 'E');
+-- call AddArc('D', 'F');
+-- 
+-- call BuildPathMap('A');
+-- call BuildRouteTo('E');
+-- SELECT * FROM RouteP ORDER BY id DESC;
+
+--|--------------------------------------------------------------------------------
+--| 8. Найти подграф, обладающий данными свойствами (опорное дерево)
+--|    : Построить граф минимальных маршрутов от заданной вершины до остальных
+--|--------------------------------------------------------------------------------
+
+--| 1.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- DELETE FROM VectorP;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'C');
+-- call AddArc('C', 'D');
+-- call AddArc('B', 'D');
+-- 
+-- call BuildPathMap('A');
+-- call BuildMinimalRoutes();
+-- call ShowMatrix();
+
+--| 2.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- DELETE FROM VectorP;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddVertice('E');
+-- call AddArc('B', 'A');
+-- call AddArc('C', 'B');
+-- call AddArc('C', 'E');
+-- call AddArc('A', 'E');
+-- call AddArc('D', 'E');
+-- call AddArc('D', 'C');
+-- 
+-- call BuildPathMap('A');
+-- call BuildMinimalRoutes();
+-- call ShowMatrix();
+
+--| 3.
+--|--------------------------------------------------------------------------------
+-- DELETE FROM Vertice;
+-- DELETE FROM AdjMatrix;
+-- DELETE FROM VectorP;
+-- DELETE FROM RouteP;
+-- call AddVertice('A');
+-- call AddVertice('B');
+-- call AddVertice('F');
+-- call AddVertice('G');
+-- call AddVertice('C');
+-- call AddVertice('D');
+-- call AddVertice('E');
+-- call AddVertice('F');
+-- call AddArc('A', 'B');
+-- call AddArc('B', 'F');
+-- call AddArc('F', 'G');
+-- call AddArc('G', 'A');
+-- call AddArc('F', 'C');
+-- call AddArc('F', 'E');
+-- call AddArc('C', 'D');
+-- call AddArc('D', 'E');
+-- call AddArc('D', 'F');
+-- 
+-- call BuildPathMap('F');
+-- call BuildMinimalRoutes();
+-- call ShowMatrix();

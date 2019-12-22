@@ -57,40 +57,40 @@ END;
 --| 3. Добавление дуги
 --|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE AddArc(
-  IN node_name_from VARCHAR(16);
+  IN node_name_FROM VARCHAR(16);
   IN node_name_to VARCHAR(16);
 )
 DECLARE
-VAR node_id_from, node_id_to INT;
+VAR node_id_FROM, node_id_to INT;
 CODE
   EXECUTE "SELECT node_id FROM Vertice
-    WHERE node_name=?", node_name_from into node_id_from;
+    WHERE node_name=?", node_name_FROM INTO node_id_FROM;
   EXECUTE "SELECT node_id FROM Vertice 
-    WHERE node_name=?", node_name_to into node_id_to;
+    WHERE node_name=?", node_name_to INTO node_id_to;
   EXECUTE "INSERT INTO AdjMatrix(id_in, id_out) 
-    VALUES(?, ?)", node_id_to, node_id_from;
+    VALUES(?, ?)", node_id_to, node_id_FROM;
 END;
 
 --|--------------------------------------------------------------------------------
 --| 4. Удаление дуги
 --|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE RemoveArc(
-  IN node_name_from VARCHAR(16);
+  IN node_name_FROM VARCHAR(16);
   IN node_name_to VARCHAR(16);
 )
 DECLARE
-  VAR node_id_from, node_id_to INT;
+  VAR node_id_FROM, node_id_to INT;
 CODE
   EXECUTE "SELECT node_id FROM Vertice
-    WHERE node_name=?", node_name_from into node_id_from;
+    WHERE node_name=?", node_name_FROM INTO node_id_FROM;
   EXECUTE "SELECT node_id FROM Vertice 
-    WHERE node_name=?", node_name_to into node_id_to;
+    WHERE node_name=?", node_name_to INTO node_id_to;
   EXECUTE "DELETE FROM AdjMatrix 
-    WHERE id_in=? AND id_out=?", node_id_to, node_id_from;
+    WHERE id_in=? AND id_out=?", node_id_to, node_id_FROM;
 END;
 
  CREATE OR REPLACE PROCEDURE ShowMatrix(
- ) RESULT CURSOR(id_link INT, name_from VARCHAR(16), name_to VARCHAR(16))
+ ) RESULT CURSOR(id_link INT, name_FROM VARCHAR(16), name_to VARCHAR(16))
  DECLARE
    VAR c typeof(result);
  CODE
@@ -105,18 +105,18 @@ END;
 --| 5. Определить смежность вершин
 --|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE CheckAdjacency(
-  IN node_name_from VARCHAR(16);
+  IN node_name_FROM VARCHAR(16);
   IN node_name_to VARCHAR(16);
 ) RESULT INT
 DECLARE
-  VAR cnt, node_id_from, node_id_to INT;
+  VAR cnt, node_id_FROM, node_id_to INT;
 CODE
   EXECUTE "SELECT node_id FROM Vertice
-    WHERE node_name=?", node_name_from into node_id_from;
+    WHERE node_name=?", node_name_FROM INTO node_id_FROM;
   EXECUTE "SELECT node_id FROM Vertice 
-    WHERE node_name=?", node_name_to into node_id_to;
+    WHERE node_name=?", node_name_to INTO node_id_to;
   EXECUTE "SELECT count(*) FROM AdjMatrix
-    WHERE id_in=? AND id_out=?", node_id_to, node_id_from into cnt;
+    WHERE id_in=? AND id_out=?", node_id_to, node_id_FROM INTO cnt;
   RETURN cnt;
 END;
 
@@ -132,10 +132,10 @@ DECLARE
   VAR cnt INT;
 CODE
   EXECUTE "SELECT node_id FROM Vertice
-    WHERE node_name=?", node_name into node_id;
+    WHERE node_name=?", node_name INTO node_id;
   EXECUTE "SELECT count(*) FROM AdjMatrix
     WHERE (id_link=? AND id_in=?) OR (id_link=? AND id_out=?)",
-    link_value, node_id, link_value, node_id into cnt;
+    link_value, node_id, link_value, node_id INTO cnt;
   RETURN cnt;
 END;
 
@@ -148,7 +148,7 @@ DECLARE
 CODE
   LOOP
     EXECUTE "call RemoveNodesWithOnlyInArcs()";
-    EXECUTE "SELECT count(*) FROM GetNodesWithOnlyInArcs()" into n;
+    EXECUTE "SELECT count(*) FROM GetNodesWithOnlyInArcs()" INTO n;
   UNTIL n = 0;  
 END;
 
@@ -210,7 +210,7 @@ DECLARE
 CODE
   LOOP
     EXECUTE "call RemoveNodesWithOnlyInArcs()";
-    EXECUTE "SELECT count(*) FROM GetNodesWithOnlyInArcs()" into n;
+    EXECUTE "SELECT count(*) FROM GetNodesWithOnlyInArcs()" INTO n;
   UNTIL n = 0;  
 END;
 
@@ -224,8 +224,8 @@ DECLARE
   VAR c CURSOR(node_id INT);
 CODE
   /* get start id */
-  EXECUTE "select node_id from Vertice 
-    where node_name=?", node_name_start into node_id_start; 
+  EXECUTE "SELECT node_id FROM Vertice 
+    WHERE node_name=?", node_name_start INTO node_id_start; 
 
   /* VectorP initialization */
   EXECUTE "INSERT INTO VectorP(node_id, prev_node_id, is_visited) 
@@ -235,8 +235,8 @@ CODE
   
   LOOP
     /* select min cost of not visited */
-    EXECUTE "select min(cost) from VectorP
-      WHERE is_visited=0" into cur_node_cost;
+    EXECUTE "SELECT min(cost) FROM VectorP
+      WHERE is_visited=0" INTO cur_node_cost;
     
     /* unreachable nodes are left */
     IF  cur_node_cost=NULL THEN
@@ -244,19 +244,19 @@ CODE
     ENDIF;
     
     /* select node which is not visited and has min cost */
-    EXECUTE "select node_id from VectorP 
-      where is_visited=0 and cost=? LIMIT 1", 
-      cur_node_cost into cur_node_id;
+    EXECUTE "SELECT node_id FROM VectorP 
+      WHERE is_visited=0 and cost=? LIMIT 1", 
+      cur_node_cost INTO cur_node_id;
 
     /* get all near destination nodes of current node */
     OPEN c FOR
-    "select id_in from AdjMatrix
+    "SELECT id_in FROM AdjMatrix
       WHERE id_out=?", cur_node_id;
 
     /* update cost for each destination node */
     WHILE NOT outofcursor(c) LOOP
-      EXECUTE "select cost from VectorP 
-        WHERE node_id=?", c.node_id into out_node_cost;
+      EXECUTE "SELECT cost FROM VectorP 
+        WHERE node_id=?", c.node_id INTO out_node_cost;
     
       IF out_node_cost=NULL OR cur_node_cost + 1 < out_node_cost THEN
         EXECUTE "UPDATE VectorP SET cost=? 
@@ -265,7 +265,7 @@ CODE
           WHERE node_id=?", cur_node_id, c.node_id;
       ENDIF;
 
-      fetch c;
+      FETCH c;
     ENDLOOP;
 
     /* mark current node as visited */
@@ -273,12 +273,15 @@ CODE
       WHERE node_id=?", cur_node_id;
 
     /* check not visited nodes still exist */
-    EXECUTE "select count(node_id) from VectorP 
-      where is_visited=0" into cnt_not_visited;
+    EXECUTE "SELECT count(node_id) FROM VectorP 
+      WHERE is_visited=0" INTO cnt_not_visited;
 
   UNTIL cnt_not_visited = 0;
 END;
 
+--|--------------------------------------------------------------------------------
+--| 7. Найти путь между двумя вершинами
+--|--------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE BuildRouteTo(
   IN node_name_to VARCHAR(16);
 ) RESULT INT
@@ -287,11 +290,11 @@ DECLARE
   VAR is_visited, node_id_cur INT;
   VAR node_name_cur VARCHAR(16);
 CODE
-  EXECUTE "select node_id from Vertice 
-    where node_name=?", node_name_to into node_id_to; 
+  EXECUTE "SELECT node_id FROM Vertice 
+    WHERE node_name=?", node_name_to INTO node_id_to; 
   
-  EXECUTE "select is_visited from VectorP 
-    where node_id=?", node_id_to into is_visited; 
+  EXECUTE "SELECT is_visited FROM VectorP 
+    WHERE node_id=?", node_id_to INTO is_visited; 
 
   IF is_visited=0 THEN
     return -1;
@@ -301,31 +304,63 @@ CODE
   node_name_cur := node_name_to;
 
   LOOP
-    EXECUTE "insert into RouteP(node_name)
+    EXECUTE "INSERT INTO RouteP(node_name)
       values(?)", node_name_cur;
 
     node_id_cur_cp := node_id_cur;
-    EXECUTE "select prev_node_id from VectorP
-      WHERE node_id=? AND is_visited=1", node_id_cur into node_id_cur;
+    EXECUTE "SELECT prev_node_id FROM VectorP
+      WHERE node_id=? AND is_visited=1", node_id_cur INTO node_id_cur;
     
-    EXECUTE "select node_name from Vertice
-      WHERE node_id=?", node_id_cur into node_name_cur;
+    EXECUTE "SELECT node_name FROM Vertice
+      WHERE node_id=?", node_id_cur INTO node_name_cur;
 
   UNTIL node_id_cur = node_id_cur_cp;  
   return 1;
 END;
 
-DELETE FROM Vertice;
-DELETE FROM AdjMatrix;
-DELETE FROM VectorP;
-call AddVertice('A');
-call AddVertice('B');
-call AddVertice('C');
-call AddVertice('D');
-call AddArc('A', 'B');
-call AddArc('B', 'C');
-call AddArc('D', 'B');
+--|--------------------------------------------------------------------------------
+--| 8. Найти подграф, обладающий данными свойствами (опорное дерево)
+--|    : Построить граф минимальных маршрутов от заданной вершины до остальных
+--|--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE BuildMinimalRoutes()
+DECLARE
+  VAR node_id_prev, node_id_cur, id_link INT;
+  VAR c CURSOR(node_id INT);
+CODE
+  EXECUTE "DELETE FROM Vertice WHERE node_id IN
+      SELECT node_id FROM VectorP WHERE is_visited=0";
 
-call BuildPathMap('A');
-call BuildRouteTo('D');
-select * from RouteP order by id desc;
+  EXECUTE "DELETE FROM AdjMatrix";
+
+  EXECUTE "DELETE FROM VectorP 
+    WHERE is_visited=0";
+
+  OPEN c FOR "SELECT node_id FROM Vertice";
+
+  WHILE NOT outofcursor(c) LOOP
+    node_id_cur := c.node_id;
+    node_id_prev := 0;
+    WHILE TRUE LOOP
+      node_id_prev := node_id_cur;
+      EXECUTE "SELECT prev_node_id FROM VectorP
+        WHERE node_id=?", node_id_cur INTO node_id_cur;
+      
+      IF node_id_prev=node_id_cur THEN
+        BREAK;
+      ENDIF
+
+      id_link := 0;
+      EXECUTE "SELECT id_link FROM AdjMatrix
+        WHERE id_in=? AND id_out=?", node_id_prev, node_id_cur INTO id_link;
+      
+      IF id_link<>0 THEN
+        BREAK;
+      ENDIF
+
+      EXECUTE "INSERT INTO AdjMatrix(id_in, id_out) 
+        VALUES(?, ?)", node_id_prev, node_id_cur;
+
+    ENDLOOP
+    FETCH c;
+  ENDLOOP
+END;
